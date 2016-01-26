@@ -2,17 +2,16 @@ module Glob (namesMatching) where
 
 import System.Directory (doesDirectoryExist, doesFileExist, getCurrentDirectory, getDirectoryContents)
 import System.FilePath (dropTrailingPathSeparator, splitFileName, (</>))
+import System.Posix.Files(fileExist)
 import Control.Exception (handle)
 import Control.Monad (forM)
 import GlobRegEx (matchesGlob)
-
-namesMatching
 
 isPattern :: String -> Bool
 isPattern = any (`elem` "[*?")
 
 namesMatching pat | not (isPattern pat) = do
-											 exists <- doesNameExist pat
+											 exists <- fileExist pat
 					     				 return (if exists then [pat] else [])
 								  | otherwise = do
 										   case splitFileName pat of
@@ -30,11 +29,12 @@ namesMatching pat | not (isPattern pat) = do
 																								return (map (dir </>) baseNames)
 														 return (concat pathNames)
 
-doesNameExist :: FilePath -> IO Bool
+--Same purpose as fileExist from System.Posix.Files
+{-doesNameExist :: FilePath -> IO Bool
 doesNameExist name = do
 	fileExists <- doesFileExist name
 	if fileExists then return True
-		else doesDirectoryExist name
+		else doesDirectoryExist name-}
 
 listMatches :: FilePath -> String -> IO [String]
 listMatches dirName pat = do
@@ -52,5 +52,5 @@ isHidden _ = False
 listPlain :: FilePath -> String -> IO [String]
 listPlain dirName baseName = do
 	exists <- if null baseName then doesDirectoryExist dirName
-							 else doesNameExist (dirName </> baseName)
+							 else fileExist (dirName </> baseName)
 	return(if exists then [baseName] else [])
